@@ -20,10 +20,31 @@
                 }
             },
             "args": [
+                "encrypt"
+            ],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'pix2wav'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=pix2wav",
+                    "--package=pix2wav"
+                ],
+                "filter": {
+                    "name": "pix2wav",
+                    "kind": "bin"
+                }
+            },
+            "args": [
                 "decrypt"
             ],
             "cwd": "${workspaceFolder}"
         },
+
         {
             "type": "lldb",
             "request": "launch",
@@ -42,6 +63,7 @@
             },
             "args": [],
             "cwd": "${workspaceFolder}"
-        }
+        },
+        
     ]
 }
