@@ -15,12 +15,12 @@ cargo build
 ## Usage
 
 ```bash
-file2wav [insert|recover] -a <input WAV audio file> -f <file to insert> -o <output file>
+file2wav [OPTIONS] <input_wav> <file_path> <output_wav> [SUBCOMMAND]
 ```
 
 Additional options:
 
-- --bits-per-sample: How many bits of the original file are inserted in the LSB (Less significant bits) of the audio samples. 2 by default.
+- --bits-per-sample: How many bits of the original file are inserted in the LSB (Less significant bits) of the audio samples. Max 8. 2 by default.
 - --skip: Insert each *skip*  samples. 0 by default.
 
 ### Examples
