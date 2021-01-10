@@ -2,7 +2,7 @@ use hound;
 use std::i16;
 use std::fs::File;
 use std::io::prelude::*;
-use itertools::izip;
+use clap::{Arg, App, SubCommand};
 
 const BITS_PER_BYTE: u8 = 2;
 
@@ -32,10 +32,10 @@ fn divide_bytes(file: &mut File, n_bits: u8) -> Vec<u8> {
     bytes
 }
 
-fn insert(input_file: &str, hide_file: &str, output_file: &str) {
-    let mut reader = hound::WavReader::open(input_file)
+fn insert(input_wav: &str, hide_file: &str, output_wav: &str) {
+    let mut reader = hound::WavReader::open(input_wav)
     .expect("Error opening input audio file.");
-    let mut writer = hound::WavWriter::create(output_file, reader.spec())
+    let mut writer = hound::WavWriter::create(output_wav, reader.spec())
         .expect("Error creating output audio file.");
 
     let mut file = File::open(hide_file)
@@ -62,10 +62,10 @@ fn insert(input_file: &str, hide_file: &str, output_file: &str) {
     writer.finalize().unwrap();
 }
 
-fn recover(input_audio: &str) -> Vec<u8> {
+fn recover(input_wav: &str) -> Vec<u8> {
     let mut bytes : Vec<u8> = Vec::new();
 
-    let mut reader = hound::WavReader::open(input_audio)
+    let mut reader = hound::WavReader::open(input_wav)
         .expect("Error opening input audio file.");
 
     let mask = generate_bit_mask(BITS_PER_BYTE);
@@ -94,17 +94,66 @@ fn recover(input_audio: &str) -> Vec<u8> {
 }
 
 fn main() {
-    println!("file2wav");
+    let matches = App::new("file2wav")
+        .version("0.1.0")
+        .author("Alberto López Sánchez <alberto.lopez.s@outlook.es>")
+        .about("insert any file into a WAV audio file")
 
-    let command = std::env::args().nth(1).expect("no command given, use [insert, recover]");
+        .arg(Arg::with_name("input_wav")
+            .help("Sets the input audio WAV file to use")
+            .required(true)
+            .index(1))
 
-    if command == "insert" {
-        insert("audio/kauwela.wav", "imgs/test_bici.jpg" ,"kauwela_inserted.wav")
-    } else if command == "recover" {
-        let bytes = recover("kauwela_inserted.wav");
-        let mut file = File::create("./recovered.jpg").expect("Error creating recovered file.");
-        file.write_all(bytes.as_slice()).expect("Error writing in the recovered file.");
-    }
+        .arg(Arg::with_name("Bits Per Sample")
+            .short("bps")
+            .long("bits-per-sample")
+            .value_name("bps")
+            .help("Sets a custom config file")
+            .takes_value(true)
+            .default_value("2"))
+        
+        .arg(Arg::with_name("Skip")
+            .short("s")
+            .long("skip")
+            .value_name("skip")
+            .help("How many bits of the original file are inserted in the LSB (Less significant bits) of the audio samples. max 8.")
+            .takes_value(true)
+            .default_value("0"))
+        
+        .subcommand(SubCommand::with_name("insert")
+            .about("insert file in WAV audio file.")
+            .arg(Arg::with_name("hide_file")
+                .help("File to insert in the WAV file")
+                .required(true)
+                )
+            .arg(Arg::with_name("output_wav")
+                .help("Name of the output audio WAV file")
+                .required(true)
+                ))
+                    
+        .subcommand(SubCommand::with_name("recover")
+            .about("recover a file previously inserted in a WAV audio file.")
+            .arg(Arg::with_name("output_file")
+                .help("Name of the output recovered file")
+                .required(true)
+                ))
+        
+        .get_matches();
 
+    let input_wav = matches.value_of("input_wav").unwrap();
     
+    if let Some(matches) = matches.subcommand_matches("insert") {
+        let hide_file = matches.value_of("hide_file").unwrap();
+        let output_wav = matches.value_of("output_wav").unwrap();
+
+        insert(input_wav, hide_file ,output_wav)
+    }
+    
+    if let Some(matches) = matches.subcommand_matches("recover") {
+        let output_file = matches.value_of("output_file").unwrap();
+
+        let bytes = recover(input_wav);
+        let mut file = File::create(output_file).expect("Error creating recovered file.");
+        file.write_all(bytes.as_slice()).expect("Error writing the recovered file.");
+    }    
 }

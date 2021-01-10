@@ -20,7 +20,11 @@
                 }
             },
             "args": [
-                "encrypt"
+                "insert",
+                "-b",
+                "1",
+                "-s",
+                "1"
             ],
             "cwd": "${workspaceFolder}"
         },
@@ -40,7 +44,11 @@
                 }
             },
             "args": [
-                "decrypt"
+                "recover",
+                "-b",
+                "1",
+                "-s",
+                "1"
             ],
             "cwd": "${workspaceFolder}"
         },
