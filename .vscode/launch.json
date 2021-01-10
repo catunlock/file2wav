@@ -20,11 +20,12 @@
                 }
             },
             "args": [
+                "--bits-per-sample",
+                "8",
+                ".\\audio\\kauwela.wav",
                 "insert",
-                "-b",
-                "1",
-                "-s",
-                "1"
+                ".\\imgs\\test_bici.jpg",
+                "audio_bps-8_skip_0.wav"
             ],
             "cwd": "${workspaceFolder}"
         },
