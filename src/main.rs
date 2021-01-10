@@ -32,7 +32,7 @@ fn divide_bytes(file: &mut File, n_bits: u8) -> Vec<u8> {
     bytes
 }
 
-fn encrypt(input_file: &str, hide_file: &str, output_file: &str) {
+fn insert(input_file: &str, hide_file: &str, output_file: &str) {
     let mut reader = hound::WavReader::open(input_file)
     .expect("Error opening input audio file.");
     let mut writer = hound::WavWriter::create(output_file, reader.spec())
@@ -46,14 +46,15 @@ fn encrypt(input_file: &str, hide_file: &str, output_file: &str) {
     let mask = generate_bit_mask(BITS_PER_BYTE);
 
     println!("Samples length {}", samples.len());
+    let audio_samples: Vec<i16> = samples.into_iter()
+        .map(|a| a.expect("Error reading audio sample"))
+        .collect();
 
-    for (orig_sample, stega_byte) in izip!(samples, stega_data) {
-        let orig_sample = orig_sample.expect("Error reading audio file");
+    for (i, data) in stega_data.iter().enumerate() {
+        let orig_sample = audio_samples[i % audio_samples.len()];
+        let sample_inserted = (orig_sample & !mask as i16 ) |  *data as i16;
 
-        let result = (orig_sample & !mask as i16 ) |  stega_byte as i16;
-        //println!("Audio Value: {} -> Crop: {}", sample, crop);
-        writer.write_sample(result).unwrap();
-
+        writer.write_sample(sample_inserted).expect("Error writing output audio file");
     }
 
     println!("Samples writed {}", writer.len());
@@ -61,13 +62,13 @@ fn encrypt(input_file: &str, hide_file: &str, output_file: &str) {
     writer.finalize().unwrap();
 }
 
-fn decrypt() -> Vec<u8> {
+fn recover(input_audio: &str) -> Vec<u8> {
     let mut bytes : Vec<u8> = Vec::new();
 
-    let mut reader = hound::WavReader::open("audio/GET_IT_BY_YOUR_HANDS_cropped.wav")
+    let mut reader = hound::WavReader::open(input_audio)
         .expect("Error opening input audio file.");
 
-    let mut mask = generate_bit_mask(BITS_PER_BYTE);
+    let mask = generate_bit_mask(BITS_PER_BYTE);
     let samples = reader.samples::<i16>();
 
     let mut j = 0;
@@ -95,14 +96,14 @@ fn decrypt() -> Vec<u8> {
 fn main() {
     println!("file2wav");
 
-    let command = std::env::args().nth(1).expect("no command given, use [encrypt, decrypt]");
+    let command = std::env::args().nth(1).expect("no command given, use [insert, recover]");
 
-    if command == "encrypt" {
-        encrypt("audio/GET_IT_BY_YOUR_HANDS.wav", "imgs/bici.jpg" ,"audio/GET_IT_BY_YOUR_HANDS_cropped.wav")
-    } else {
-        let bytes = decrypt();
-        let mut file = File::create("./decrypted.jpg").expect("Error creating decrypted file.");
-        file.write_all(bytes.as_slice()).expect("Error writing in the decrypted file.");
+    if command == "insert" {
+        insert("audio/kauwela.wav", "imgs/test_bici.jpg" ,"kauwela_inserted.wav")
+    } else if command == "recover" {
+        let bytes = recover("kauwela_inserted.wav");
+        let mut file = File::create("./recovered.jpg").expect("Error creating recovered file.");
+        file.write_all(bytes.as_slice()).expect("Error writing in the recovered file.");
     }
 
     
